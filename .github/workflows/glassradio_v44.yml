@@ -1,0 +1,21 @@
+name: GlassRadio V44 compatible adapter tests
+on:
+  push:
+    paths:
+      - 'glassradio-v44/**'
+      - '.github/workflows/glassradio_v44.yml'
+  pull_request:
+    paths:
+      - 'glassradio-v44/**'
+      - '.github/workflows/glassradio_v44.yml'
+jobs:
+  protocol-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run codec/cache invariants
+        working-directory: glassradio-v44
+        run: python -m unittest discover -s tests -v
