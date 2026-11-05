@@ -1,0 +1,70 @@
+{
+  "experiment": "GlassRadio V44 continuation: strong-baseline, canonical eviction policy, adaptive cascade retrieval, admission opportunity-cost, lifecycle scaling, and offline-DP oracle audit",
+  "status": "frozen-before-execution",
+  "data_seed": 2026110403,
+  "pilot_seed": 2026110405,
+  "stats_seed": 2026110404,
+  "wire_protocol": "identical to V41/V43 RAW/COPY/BIT/BYTE/RUN; receiver byte-for-byte reused; no new codec",
+  "information_constraint": "all retrieval uses only (observed, visible_mask, current cache); full target used only after retrieval for reversible encoding and admission; identical observation streams per session across methods",
+  "arm_main": {
+    "k_values": [64, 1024, 16384, 65535],
+    "amendments_before_first_valid_run": ["K=65536 -> 65535: the frozen V41 wire format uses 16-bit reference/write IDs with 0xFFFF reserved as the no-write sentinel, so the maximum addressable cache is 65,535 slots.", "Added a third strong-baseline full-scan kernel FULL2 (branchless single-pass top-2) so that the index-vs-scan comparison is not contingent on one micro-kernel.", "A prior run with a corrupted packet-audit target field (local variable dec shadowed std::dec) was discarded; its byte results were identical and are re-validated by the discrete-determinism replay check."],
+    "domains": ["uniform_exact", "uniform_near", "temporal_and_far", "scene_switch", "zipf_skew", "ui_locality", "overlay_contiguous"],
+    "sessions_per_domain": 6,
+    "test_updates_per_session": 96,
+    "repeats": 3,
+    "prewarm": "2*K RAW/COPY alternating, identical to V43 (16*K warm bytes, charged to lifecycle)"
+  },
+  "arm_long": {
+    "k": 16384,
+    "test_updates_per_session": [96, 960, 9600],
+    "methods": ["FULLT_LRU", "REC256_LRU", "BS1_LRU", "BS2_LRU", "CAS64_FULLT"],
+    "note": "tests the lifecycle amortization identity S(T)=dB*T/(W+b0*T) derived in the report"
+  },
+  "arm_evict": {
+    "k_values": [16, 64],
+    "domains": ["zipf_skew", "ui_locality"],
+    "policies": ["LRU", "FIFO", "SIEVE", "GDS", "RAND"],
+    "write_every": [1, 2],
+    "note": "eviction pressure arm: makes the LRU/SIEVE/GDS comparison meaningful (V43 write pressure ~48/16384 was ~0)"
+  },
+  "arm_oracle": {
+    "universe": 12,
+    "cache_slots": [4, 6],
+    "updates": 24,
+    "write_budget": "2 per 4 updates",
+    "mask_modes": ["full", "partial"],
+    "instances_per_config": 8,
+    "note": "offline exact DP with the same cost function; bounds the joint retrieval+admission decision headroom"
+  },
+  "retrieval_methods": {
+    "FULLS": "scalar full masked-Hamming scan (V43 replica, vector-insert top-2)",
+    "FULLT": "tuned two-pass histogram full masked-Hamming scan (strong baseline; same information, same answer, better constant)",
+    "REC256": "most-recently-used 256 window",
+    "REC16": "most-recently-used 16 window",
+    "BS1": "single 5-visible-bit bit-sliced probe",
+    "BS2": "two disjoint 5-bit probes ORed",
+    "CAS64_FULLT": "cascade: recent-64 first, escalate to FULLT iff stage-1 packet > 10 B (max non-RAW envelope)",
+    "CAS64_BS1_FULLT": "3-tier cascade: recent-64 -> BS1 -> FULLT"
+  },
+  "eviction_policies": {
+    "LRU": "recency list",
+    "FIFO": "insertion order",
+    "SIEVE": "canonical circular SIEVE (hand + visited bit set on hit, cleared as hand passes, insert at evicted slot)",
+    "GDS": "Greedy-Dual-Size, H = L + size/cost, size = last wire bytes of the object",
+    "RAND": "seeded uniform victim"
+  },
+  "admission_policies": {
+    "ALWAYS": "V43 default: write on even updates when not exact-duplicate, <=6 per 12",
+    "HALF": "write on every 4th update",
+    "ONRAW": "value-aware: write only when the encoder chose RAW (no near neighbour in cache)",
+    "NONE": "no writes after prewarm"
+  },
+  "cascade_threshold_rationale": "theta = 10 bytes is the maximum size of any non-RAW packet in the frozen codec (BIT/BYTE/RUN max payload 10 B); escalating when stage-1 exceeds 10 B means 'no codec mode can save this frame', so it is codec-derived, not tuned on test data",
+  "primary": "among methods with per-update sender thread-CPU P99 <= 50 us in all repeats and zero lossless/receiver violations: paired whole-session lifecycle and test bytes vs strongest feasible baseline",
+  "cpu_threshold_note": "50 us remains a laboratory diagnostic threshold measured with CLOCK_THREAD_CPUTIME_ID on this build; no RF, energy, or real-device deadline claim",
+  "statistics": "domain-stratified paired cluster bootstrap on whole independent synthetic sessions; 4000 resamples; seed 2026110404; no per-frame resampling",
+  "stop_rule": "if a feasible strong simple baseline matches the best index/cascade method on lifecycle bytes within the same budget, the index/joint-decision claim is NO-GO on this benchmark",
+  "true_new_training": "none; no learned model trained or used; learned baselines remain INCONCLUSIVE",
+  "provenance": "new seeds (2026110403/04/05); frozen V43 artifacts untouched and hash-verified before and after"
+}
