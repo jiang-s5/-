@@ -1,0 +1,34 @@
+{
+  "status": "NEW_PORTABLE_VIDEO_ADAPTER_NOT_HISTORICAL_V44_FROZEN_EXPERIMENT",
+  "seed": 2026110501,
+  "video_size": [
+    256,
+    144
+  ],
+  "frame_stride": 15,
+  "max_frames": 240,
+  "binarize_threshold": 128,
+  "observation_modes": [
+    "full",
+    "random",
+    "block"
+  ],
+  "cache_slots": [
+    64,
+    1024
+  ],
+  "methods": [
+    "full_lru",
+    "recent256_lru",
+    "recent16_lru",
+    "exact_lru",
+    "bs1_lru",
+    "bs2_lru",
+    "cascade_lru",
+    "full_sieve",
+    "full_gds"
+  ],
+  "write_every": 2,
+  "receiver_work_per_12": 960,
+  "max_writes_per_12": 6
+}
